@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Google Apps Script (clasp)
+# scriptIdが含まれるため、リポジトリによっては除外推奨
+.clasp.json
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
