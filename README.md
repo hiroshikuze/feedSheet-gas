@@ -8,21 +8,25 @@ Spreadsheet-driven RSS generator using Google Apps Script. Scrape web content vi
 
 ## Installation
 
-1.  **Create a Google Sheet**
-Create a new Google Spreadsheet to act as the configuration database.
+1. **Create a Google Sheet**
 
-2.  **Open Script Editor**
-Click on `Extensions` > `Apps Script` in the spreadsheet menu.
+   Create a new Google Spreadsheet to act as the configuration database.
 
-3.  **Deploy Code**
-Copy the content of `index.js` into the script editor.
+1. **Open Script Editor**
 
-4.  **Deploy as Web App**
-- Click `Deploy` > `New deployment`.
-- Select **Web app** as the type.
-- Set **Execute as** to `Me`.
-- Set **Who has access** to `Anyone` (or restrict as needed).
-- Copy the generated **Web App URL**.
+   Click on `Extensions` > `Apps Script` in the spreadsheet menu.
+
+1. **Deploy Code**
+
+   Copy the content of `index.js` into the script editor.
+
+1. **Deploy as Web App**
+
+   - Click `Deploy` > `New deployment`.
+   - Select **Web app** as the type.
+   - Set **Execute as** to `Me`.
+   - Set **Who has access** to `Anyone` (or restrict as needed).
+   - Copy the generated **Web App URL**.
 
 ## Usage
 
@@ -46,7 +50,7 @@ Set up the first row of your spreadsheet with the exact headers below. Each subs
 
 Construct the URL using your Web App URL and the `Code` defined in the spreadsheet:
 
-```
+```url
 https://script.google.com/macros/s/[YOUR_SCRIPT_ID]/exec?code=my-news-feed
 ```
 
@@ -54,9 +58,8 @@ Use this URL in your favorite RSS reader.
 
 ## File Structure
 
-```
+```tree
 /
-├── .geminirules  # Gemini CLI aiconfig
 ├── .gitignore    # Files and directories to be ignored by Git
 ├── index.js      # The main Google Apps Script code
 ├── LICENSE       # License file
