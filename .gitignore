@@ -16,5 +16,8 @@ Desktop.ini
 *.swp
 *.swo
 
+# Node.js
+node_modules/
+
 # Gemini
 .geminirules

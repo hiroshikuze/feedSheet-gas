@@ -165,67 +165,148 @@ const getConfigByNo = (no, code) => {
 };
 
 /**
- * 指定された設定に基づいてHTMLを取得・解析し、RSS 2.0形式のXML文字列を生成します。
- * @param {RssConfig} config - RSS生成のための設定オブジェクト
- * @param {boolean} - isPreview キャッシュ保存をスキップするか
- * @return {string} 生成されたRSS XML文字列
+ * 有効なUTC日付文字列（toUTCString形式）か検証します。
+ * @param {string} str - 検証対象文字列
+ * @return {boolean} 有効なUTC文字列かどうか
  */
-const generateRssFeed = (config, isPreview) => {
-  const isValidUTCString = (str) => {
-    if (typeof str !== 'string') return false;
+const isValidUTCString = (str) => {
+  if (typeof str !== 'string') return false;
+  const utcPattern = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+  if (!utcPattern.test(str)) return false;
+  const date = new Date(str);
+  if (isNaN(date.getTime())) return false;
+  return date.toUTCString() === str;
+};
 
-    const utcPattern = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;    
-    if (!utcPattern.test(str)) return false;
+/**
+ * HTMLアイテムとキャッシュを処理し、RSS出力アイテムと更新後キャッシュを返す純粋関数。
+ * ・dateあり → HTMLの値をそのまま使用
+ * ・dateなし・キャッシュあり → savedDateを使用（lastSeen/title/descriptionを更新）
+ * ・dateなし・キャッシュなし → 現在時刻をdateとしてキャッシュ新規登録
+ * ・HTMLにないがキャッシュにある（orphan）
+ *     savedDateからCACHE_PERIOD日以内 → savedDateでRSSに追加（ghost item）
+ *     savedDateからCACHE_PERIOD日超過 → キャッシュから削除、RSSにも出さない
+ * @param {Array<{title:string, url:string, description:string, rawDate:string|null, date:string|null, guid:string}>} htmlItems - HTML抽出アイテム
+ * @param {Array<{url:string, title:string, description:string, savedDate:string, lastSeen:string}>} cacheValues - 現在のキャッシュエントリ配列
+ * @param {Date} now - 現在時刻
+ * @param {number} cachePeriod - キャッシュ保持日数
+ * @param {boolean} isPreview - プレビューモード（trueのときキャッシュ更新しない）
+ * @return {{rssItems: Array, updatedCache: Array}} RSSに出力するアイテムと更新後キャッシュ
+ */
+const processItems = (htmlItems, cacheValues, now, cachePeriod, isPreview) => {
+  const nowUTC = now.toUTCString();
+  // 現在HTMLに存在するURLのセット（orphan検出用）
+  const currentUrls = new Set(htmlItems.map(item => item.url));
+  const rssItems = [];
+  // キャッシュをシャローコピーして操作（元配列を破壊しない）
+  const updatedCache = cacheValues.map(v => ({ ...v }));
 
-    const date = new Date(str);
-    if (isNaN(date.getTime())) return false;
-
-    return date.toUTCString() === str;
-  };
-
-  const html = UrlFetchApp.fetch(config.targetUrl).getContentText();
-
-  // アイテム抽出
-  const items = extractItems(html, config);
-
-  // キャッシュと比較してRSSに載せる物をフィルタ
-  const newItems = [];
-  items.forEach(item => {
-    const cacheItem = CACHE_ENTRY.value.find(v => v.url === item.url);
+  htmlItems.forEach(item => {
+    const cacheItem = updatedCache.find(v => v.url === item.url);
     const exists = !!cacheItem;
-    const nowUTC = NOW.toUTCString();
 
     Logger.log(JSON.stringify(item));
-    if(item.date) {
+
+    if (item.date) {
+      // HTMLにdateあり → そのまま使用
       Logger.log("dateをそのまま使う");
-      newItems.push(item);
+      rssItems.push(item);
+      if (exists) {
+        // キャッシュを最新化（title/descriptionが変わっていても追従）
+        cacheItem.lastSeen = nowUTC;
+        cacheItem.title = item.title;
+        cacheItem.description = item.description;
+      }
     } else {
-      if(exists) {
-        if(isValidUTCString(cacheItem.savedDate)) {
-          Logger.log("cashを使う");
+      // dateなし → キャッシュから取得 or 現在日時
+      if (exists) {
+        if (isValidUTCString(cacheItem.savedDate)) {
+          Logger.log("cacheを使う");
         } else {
           Logger.log(`${cacheItem.savedDate} 現在日付を使う`);
         }
-        item.date = (isValidUTCString(cacheItem.savedDate)) ? cacheItem.savedDate : nowUTC;
-        newItems.push(item);
+        item.date = isValidUTCString(cacheItem.savedDate) ? cacheItem.savedDate : nowUTC;
+        rssItems.push(item);
+        // キャッシュを最新化
         cacheItem.lastSeen = nowUTC;
+        cacheItem.title = item.title;
+        cacheItem.description = item.description;
       } else {
         Logger.log("キャッシュなし、現在日付を使う");
         item.date = nowUTC;
-        newItems.push(item);
+        rssItems.push(item);
       }
     }
-    if(!exists && !isPreview) {
-      CACHE_ENTRY.value.push({
+
+    // 未登録アイテムをキャッシュに追加（previewモードでは書き込まない）
+    if (!exists && !isPreview) {
+      updatedCache.push({
         url: item.url,
-        savedDate: item.rawDate || nowUTC,
+        title: item.title,
+        description: item.description,
+        savedDate: item.date || nowUTC,  // dateあり → その値 / dateなし → 現在時刻
         lastSeen: nowUTC
       });
-      saveCache();
     }
   });
 
-  return buildRssXml(config, newItems);
+  // orphan処理：HTMLにないがキャッシュにあるアイテムを処理
+  if (!isPreview) {
+    const urlsToDelete = new Set();
+    updatedCache
+      .filter(v => !currentUrls.has(v.url))
+      .forEach(cacheItem => {
+        // savedDateを起点にCACHE_PERIOD日以内かどうか判定
+        const diffDays = (now - new Date(cacheItem.savedDate)) / 1000 / 60 / 60 / 24;
+        if (diffDays <= cachePeriod) {
+          // 期間内 → ghost itemとしてRSSに追加
+          Logger.log(`orphan（期間内）: ${cacheItem.url}`);
+          rssItems.push({
+            title: cacheItem.title || '',
+            url: cacheItem.url,
+            description: cacheItem.description || '',
+            rawDate: null,
+            date: isValidUTCString(cacheItem.savedDate) ? cacheItem.savedDate : nowUTC,
+            guid: cacheItem.url
+          });
+        } else {
+          // 期限切れ → キャッシュから削除
+          Logger.log(`orphan（期限切れ）削除: ${cacheItem.url}`);
+          urlsToDelete.add(cacheItem.url);
+        }
+      });
+
+    if (urlsToDelete.size > 0) {
+      return {
+        rssItems,
+        updatedCache: updatedCache.filter(v => !urlsToDelete.has(v.url))
+      };
+    }
+  }
+
+  return { rssItems, updatedCache };
+};
+
+/**
+ * 指定された設定に基づいてHTMLを取得・解析し、RSS 2.0形式のXML文字列を生成します。
+ * @param {RssConfig} config - RSS生成のための設定オブジェクト
+ * @param {boolean} isPreview - キャッシュ保存をスキップするか
+ * @return {string} 生成されたRSS XML文字列
+ */
+const generateRssFeed = (config, isPreview) => {
+  const html = UrlFetchApp.fetch(config.targetUrl).getContentText();
+  const items = extractItems(html, config);
+
+  const { rssItems, updatedCache } = processItems(
+    items, CACHE_ENTRY.value, NOW, CACHE_PERIOD, isPreview
+  );
+
+  if (!isPreview) {
+    CACHE_ENTRY.value = updatedCache;
+    saveCache();
+  }
+
+  return buildRssXml(config, rssItems);
 };
 
 /**
@@ -421,4 +502,9 @@ const parseByFormat = (str, format) => {
   Logger.log(`${year}, ${MM - 1}, ${DD}, ${hh}, ${mm}, ${ss}`);
 
   return isNaN(date.getTime()) ? null : date;
+}
+
+// Node.js（Jest）環境でのみエクスポート（GAS実行時は module が未定義のため無視される）
+if (typeof module !== 'undefined') {
+  module.exports = { isValidUTCString, processItems, parseByFormat, escapeXml };
 }
