@@ -83,6 +83,18 @@ Use this URL in your favorite RSS reader.
 - **Cheerio (cheerio-gas)**: CSS-selector-based HTML parsing library for GAS.
 - **Jest**: Unit test runner for the pure-function logic (CI only; not used in GAS runtime).
 
+## Recommended Combination
+
+Pair **feedSheet-gas** with **[Hiro2 Feed Picker](https://github.com/hiroshikuze/Hiro2-Feed-Picker)**
+to build a fully automated news curation pipeline — no RSS support on the source site required.
+
+| Step | Tool | Role |
+| :---: | :--- | :--- |
+| 1 | **feedSheet-gas** | Converts any website into an RSS feed via CSS selectors |
+| 2 | **Hiro2 Feed Picker** | Filters articles by keyword, summarises with Gemini AI, and notifies via LINE |
+
+Both tools run entirely on Google Apps Script and Google Sheets — no servers or paid hosting needed.
+
 ## License
 
 [This project is licensed under the MIT License.](./LICENSE)
