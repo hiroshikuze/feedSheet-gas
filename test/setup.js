@@ -1,6 +1,6 @@
 /**
  * Jest セットアップファイル
- * index.js がモジュールトップレベルで参照する GAS グローバルAPIをモックします。
+ * index.gs がモジュールトップレベルで参照する GAS グローバルAPIをモックします。
  * テスト対象は純粋関数（processItems, parseByFormat, escapeXml, isValidUTCString）のみ。
  * GAS 固有の副作用（UrlFetchApp, SpreadsheetApp 等）は呼び出されません。
  */

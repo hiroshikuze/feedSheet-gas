@@ -18,7 +18,7 @@ Spreadsheet-driven RSS generator using Google Apps Script. Scrape web content vi
 
 1. **Deploy Code**
 
-   Copy the content of `index.js` into the script editor.
+   Copy the content of `index.gs` into the script editor.
 
 1. **Deploy as Web App**
 
@@ -70,7 +70,7 @@ Use this URL in your favorite RSS reader.
 ├── .gitignore                # Files and directories to be ignored by Git
 ├── CLAUDE.md                 # AI assistant guide: architecture, conventions, algorithm notes
 ├── appscript.json            # GAS manifest: runtime, library dependencies, web app config
-├── index.js                  # The main Google Apps Script code
+├── index.gs                  # The main Google Apps Script code
 ├── LICENSE                   # MIT License
 ├── package.json              # npm config for Jest (test only; no build system)
 └── README.md                 # This file

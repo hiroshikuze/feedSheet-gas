@@ -8,7 +8,7 @@ AI assistant guide for the **feedSheet-gas** codebase. Read this before making a
 
 **feedSheet-gas** is a Google Apps Script (GAS) application that converts any website into an RSS feed. Scraping rules (CSS selectors) are stored in a Google Sheet ("取得元"). The app is deployed as a Web App endpoint that returns RSS 2.0 XML.
 
-There is **no build system, no npm, no CI/CD**. The single source file `index.js` is pasted directly into the Google Apps Script editor.
+There is **no build system, no npm, no CI/CD**. The single source file `index.gs` is pasted directly into the Google Apps Script editor.
 
 ---
 
@@ -16,7 +16,7 @@ There is **no build system, no npm, no CI/CD**. The single source file `index.js
 
 ```
 /
-├── index.js          # Single-file GAS application (all logic here)
+├── index.gs          # Single-file GAS application (all logic here)
 ├── appscript.json    # GAS manifest: timezone, library deps, webapp config
 ├── .geminirules      # AI coding conventions (Japanese, not tracked in git)
 ├── .gitignore        # Excludes .clasp.json, IDE dirs, OS files
@@ -24,7 +24,7 @@ There is **no build system, no npm, no CI/CD**. The single source file `index.js
 └── LICENSE           # MIT License
 ```
 
-There is **no build step, no bundler, and no test framework**. The single `index.js` is copied directly into the GAS script editor.
+There is **no build step, no bundler, and no test framework**. The single `index.gs` is copied directly into the GAS script editor.
 
 ## Technology Stack
 
@@ -34,7 +34,7 @@ There is **no build step, no bundler, and no test framework**. The single `index
 - **Output**: RSS 2.0 XML via `ContentService`
 - **Logging**: Stackdriver (`Logger.log()`)
 
-## Code Architecture (`index.js`)
+## Code Architecture (`index.gs`)
 
 ### Global State (module-level constants/variables)
 
@@ -146,7 +146,7 @@ All rules from `.geminirules` apply. Key points:
 
 ## Deployment
 
-1. Copy `index.js` content into the GAS script editor (or push with `clasp push` if `.clasp.json` is configured locally).
+1. Copy `index.gs` content into the GAS script editor (or push with `clasp push` if `.clasp.json` is configured locally).
 2. `appscript.json` is the project manifest; ensure it is in the root of the GAS project.
 3. Deploy via `Deploy > New deployment > Web app`:
    - Execute as: `Me` (USER_DEPLOYING)
@@ -160,11 +160,11 @@ There is no automated test suite. Use these approaches:
 - **`?preview=1`** — returns the feed without modifying the cache; safe for repeated calls during development.
 - **`?reset=1`** — clears the cache for a config entry, forcing all items to be treated as new.
 - **Stackdriver logs** — visible in the GAS editor under `View > Logs` or Google Cloud Console.
-- **`Logger.log()`** — liberally used throughout `index.js`; add more for new logic.
+- **`Logger.log()`** — liberally used throughout `index.gs`; add more for new logic.
 
 ## Editing Guidelines for AI Assistants
 
-- **Read `index.js` fully before making any change** — all logic is in one file and functions are interdependent.
+- **Read `index.gs` fully before making any change** — all logic is in one file and functions are interdependent.
 - **Do not introduce `var`**, Node.js APIs, or npm packages.
 - **Do not remove `'use strict'`**.
 - **Preserve JSDoc comments** on every function; update them when signatures change.

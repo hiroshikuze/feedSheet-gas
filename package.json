@@ -12,6 +12,23 @@
     "testEnvironment": "node",
     "setupFiles": [
       "./test/setup.js"
-    ]
-  }
+    ],
+    "moduleFileExtensions": ["js", "gs", "mjs", "cjs", "jsx", "ts", "tsx", "json", "node"]
+  },
+  "main": "index.gs",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiroshikuze/feedSheet-gas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hiroshikuze/feedSheet-gas/issues"
+  },
+  "homepage": "https://github.com/hiroshikuze/feedSheet-gas#readme"
 }

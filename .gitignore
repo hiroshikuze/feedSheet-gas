@@ -9,6 +9,7 @@ Desktop.ini
 # Google Apps Script (clasp)
 # scriptIdが含まれるため、リポジトリによっては除外推奨
 .clasp.json
+appsscript.json
 
 # Editor directories and files
 .idea/
