@@ -107,19 +107,21 @@ Either `no` or `code` is required. Omitting both returns an error response.
 
 ## Key Functions (index.js)
 
-| Function | Lines | Purpose |
-| :--- | :--- | :--- |
-| `doGet(e)` | 39–81 | Web App entry point; orchestrates the full pipeline |
-| `getConfigByNo(no, code)` | 131–165 | Reads sheet and returns an `RssConfig` object |
-| `initCache(no, isReset, isPreview)` | 89–103 | Loads `CACHE_JSON` from ScriptProperties; filters expired entries |
-| `saveCache()` | 108–111 | Serialises `CACHE` back to `CACHE_JSON` ScriptProperty |
-| `cacheMergeEntry()` | 116–123 | Upserts `CACHE_ENTRY` back into `CACHE` |
-| `generateRssFeed(config, isPreview)` | 173–229 | Fetches HTML, extracts items, assigns dates, updates cache |
-| `extractItems(html, config)` | 237–283 | Cheerio-based extraction; resolves relative URLs |
-| `buildRssXml(config, items)` | 291–317 | Produces an RSS 2.0 XML string |
-| `createErrorResponse(msg)` | 324–327 | Returns plain-text error via ContentService |
-| `escapeXml(unsafe)` | 334–341 | Escapes `<`, `>`, `&`, `'`, `"` for XML safety |
-| `parseByFormat(str, format)` | 349–424 | Token-based date parser (see below) |
+| Function | Purpose |
+| :--- | :--- |
+| `doGet(e)` | Web App entry point; orchestrates the full pipeline |
+| `getConfigByNo(no, code)` | Reads sheet and returns an `RssConfig` object |
+| `initCache(no, isReset, isPreview)` | Loads `CACHE_JSON` from ScriptProperties; filters expired entries |
+| `saveCache()` | Serialises `CACHE` back to `CACHE_JSON` ScriptProperty |
+| `cacheMergeEntry()` | Upserts `CACHE_ENTRY` back into `CACHE` |
+| `isValidUTCString(str)` | Validates a `toUTCString()` formatted date string |
+| `processItems(htmlItems, cacheValues, now, cachePeriod, isPreview)` | **Pure function.** Core algorithm: merges HTML items with cache, handles orphan items, returns `{ rssItems, updatedCache }` |
+| `generateRssFeed(config, isPreview)` | Fetches HTML, calls `processItems`, writes cache if not preview |
+| `extractItems(html, config)` | Cheerio-based extraction; resolves relative URLs |
+| `buildRssXml(config, items)` | Produces an RSS 2.0 XML string |
+| `createErrorResponse(msg)` | Returns plain-text error via ContentService |
+| `escapeXml(unsafe)` | Escapes `<`, `>`, `&`, `'`, `"` for XML safety |
+| `parseByFormat(str, format)` | Token-based date parser (see below) |
 
 ### `parseByFormat` Token Reference
 
@@ -142,12 +144,64 @@ Missing components default to the current year, month 1, day 1, and 00:00:00.
 
 ## Caching Behaviour
 
-- Cache is stored as JSON in the ScriptProperty `CACHE_JSON`.
-- Structure: `[{ no, value: [{ url, savedDate, lastSeen }] }, …]`
-- Entries older than `CACHE_PERIOD` days (based on `lastSeen`) are pruned in `initCache`.
-- When an item has no parseable date, its `pubDate` is assigned from `savedDate` in cache (if valid UTC), or the current datetime.
+### Cache Structure
+
+```
+CACHE_JSON (ScriptProperty)
+└─ Array of { no, value: [...] }
+              value: Array of {
+                url,
+                title,        ← ghost item表示に必要（v2追加）
+                description,  ← ghost item表示に必要（v2追加）
+                savedDate,    ← 初回取得時の日付（date不明時はNOW）
+                lastSeen      ← 最後にHTMLで確認された日付
+              }
+```
+
+### `processItems` Algorithm (core logic)
+
+RSSリーダーはポーリング間隔で取得するため、サイトに掲載→消えるの間隔がポーリング間隔より短い場合に記事を見逃す。そのため、HTMLから消えたアイテムでも **savedDate から CACHE_PERIOD 日以内はRSSに出し続ける（ghost item）**。
+
+```
+HTMLから抽出した各アイテム:
+  dateあり
+    → そのままRSSに追加
+    → キャッシュにあればlastSeen/title/descriptionを更新
+  dateなし・キャッシュあり
+    → savedDate（有効なUTCなら）をdateとしてRSSに追加
+    → キャッシュのlastSeen/title/descriptionを更新
+  dateなし・キャッシュなし
+    → NOWをdateとしてRSSに追加
+    → キャッシュに新規登録（savedDate=NOW）
+
+orphan処理（HTMLにないがキャッシュにあるアイテム）:
+  NOW - savedDate ≦ CACHE_PERIOD
+    → ghost itemとしてRSSに追加（savedDateをpubDateに使用）
+  NOW - savedDate ＞ CACHE_PERIOD
+    → キャッシュから削除、RSSにも出さない
+```
+
+`isPreview=true` の場合、orphan処理・キャッシュ書き込みともにスキップ。
+
+### Other Notes
+
+- `initCache` は `lastSeen` ベースで古いエントリを事前に除去（安全網）。
+- `savedDate` ベースの期限判定は `processItems` 内の orphan 処理が担う。
 - `preview=1` skips both reading and writing cache.
 - `reset=1` starts with an empty `CACHE` for that feed, forcing all items to appear as new.
+
+### Cache Storage Limits and Best Practice
+
+**ScriptProperties の制限：** 1プロパティあたり9KB、スクリプト全体で500KB。title/descriptionを含めると1アイテム数百〜1KB弱のため、数百アイテムで上限に達する。
+
+**推奨：スプレッドシート内に専用「キャッシュ」シートを設ける（将来の改善課題）**
+
+| 方式 | 上限 | 速度 | 推奨度 |
+| :--- | :--- | :--- | :--- |
+| ScriptProperties（現行） | 500KB | 速い | 小規模のみ |
+| **専用Sheetキャッシュ（推奨）** | **実質無制限** | やや遅い | **◎** |
+
+Sheet方式に移行する場合の列設計: `no` / `url` / `title` / `description` / `savedDate` / `lastSeen`。`initCache`/`saveCache` を差し替えるだけで済むよう、キャッシュ読み書きは必ずこの2関数に集約すること。
 
 ---
 
