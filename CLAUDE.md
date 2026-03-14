@@ -1,10 +1,16 @@
-# CLAUDE.md — AI Assistant Guide for feedSheet-gas
+# CLAUDE.md — feedSheet-gas
 
-This file describes the codebase structure, conventions, and workflows for AI assistants working on this repository.
+AI assistant guide for the **feedSheet-gas** codebase. Read this before making any changes.
+
+---
 
 ## Project Overview
 
-**feedSheet-gas** is a Google Apps Script (GAS) web application that generates RSS 2.0 feeds from any website. Feed configurations (CSS selectors, URLs, date formats) are stored in a Google Sheet. When deployed as a GAS Web App, it scrapes the target URL and returns a valid RSS XML response.
+**feedSheet-gas** is a Google Apps Script (GAS) application that converts any website into an RSS feed. Scraping rules (CSS selectors) are stored in a Google Sheet ("取得元"). The app is deployed as a Web App endpoint that returns RSS 2.0 XML.
+
+There is **no build system, no npm, no CI/CD**. The single source file `index.js` is pasted directly into the Google Apps Script editor.
+
+---
 
 ## Repository Structure
 
