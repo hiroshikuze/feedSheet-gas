@@ -64,7 +64,7 @@ const doGet = (e) => {
 
     Logger.log("2");
     // 2. キャッシュ初期化
-    initCache(no, isReset, isPreview);
+    initCache(no, isReset, isPreview, config.targetUrl);
 
     // 3. RSS生成
     Logger.log("3");
@@ -85,15 +85,26 @@ const doGet = (e) => {
  * @param {number} no - 取得したい設定のNo
  * @param {boolean} isReset - キャッシュをリセットするか
  * @param {boolean} isPreview - キャッシュ保存をスキップするか
+ * @param {string} targetUrl - 現在の設定のtargetUrl（変更検知用フィンガープリント）
  */
-const initCache = (no, isReset, isPreview) => {
+const initCache = (no, isReset, isPreview, targetUrl) => {
   if (!isReset && !isPreview) {
     CACHE = JSON.parse(scriptProperties.getProperty("CACHE_JSON") || "[]");
   }
 
   // noに該当するキャッシュのみ取り出す
   CACHE_ENTRY = CACHE.find(c => c.no === no);
-  if (!CACHE_ENTRY) CACHE_ENTRY = { no, value: [] };
+  if (!CACHE_ENTRY) CACHE_ENTRY = { no, targetUrl, value: [] };
+
+  // targetUrlが変わっていたら自動リセット（設定変更・行の差し替えに対応）
+  // ※ targetUrl が undefined（旧形式キャッシュ）の場合も不一致扱いでリセット
+  if (!isReset && CACHE_ENTRY.targetUrl !== targetUrl) {
+    Logger.log(`targetUrl変更を検知。キャッシュを自動リセット: ${CACHE_ENTRY.targetUrl} → ${targetUrl}`);
+    CACHE_ENTRY = { no, targetUrl, value: [] };
+  } else {
+    // フィンガープリントを最新に更新
+    CACHE_ENTRY.targetUrl = targetUrl;
+  }
 
   // 古いデータを削除
   CACHE_ENTRY.value = CACHE_ENTRY.value.filter(v => {
@@ -120,6 +131,40 @@ const cacheMergeEntry = () => {
   } else {
     CACHE.push(CACHE_ENTRY);
   }
+};
+
+/**
+ * スプレッドシートに存在しない No のキャッシュエントリを CACHE_JSON から削除します。
+ * スプレッドシートの行を削除した後、GASエディタから手動で実行してください。
+ * doGet 経由では呼び出されません。
+ */
+const purgeOrphanCache = () => {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('取得元');
+  if (!sheet) {
+    Logger.log('purgeOrphanCache: シート "取得元" が見つかりません。');
+    return;
+  }
+
+  // スプレッドシートの有効な No 一覧を取得（ヘッダー行を除く、空白行はスキップ）
+  const data = sheet.getDataRange().getValues();
+  const validNos = new Set(
+    data.slice(1)
+      .map(r => r[0])
+      .filter(v => v !== '' && v !== null)
+      .map(v => Number(v))
+  );
+  Logger.log(`有効なNo一覧: ${[...validNos].join(', ')}`);
+
+  const allCache = JSON.parse(scriptProperties.getProperty('CACHE_JSON') || '[]');
+  const before = allCache.length;
+
+  // スプレッドシートに存在しない no のエントリを除外
+  const filtered = allCache.filter(entry => validNos.has(Number(entry.no)));
+  const removed = before - filtered.length;
+
+  scriptProperties.setProperty('CACHE_JSON', JSON.stringify(filtered));
+  Logger.log(`purgeOrphanCache 完了: ${removed} 件削除、${filtered.length} 件保持`);
 };
 
 /**
@@ -515,7 +560,19 @@ const parseByFormat = (str, format) => {
   return isNaN(date.getTime()) ? null : date;
 }
 
+/** テスト用：CACHE_ENTRY の現在値を返す純粋ゲッター */
+const getCacheEntry = () => CACHE_ENTRY;
+
+/**
+ * テスト用：モジュールレベルのキャッシュ変数をリセットする。
+ * GAS本番は毎リクエスト新規実行のため不要。Jestのモジュールキャッシュ対策専用。
+ */
+const _resetCacheForTest = () => {
+  CACHE = [];
+  CACHE_ENTRY = {};
+};
+
 // Node.js（Jest）環境でのみエクスポート（GAS実行時は module が未定義のため無視される）
 if (typeof module !== 'undefined') {
-  module.exports = { isValidUTCString, processItems, parseByFormat, escapeXml, toAbsoluteUrl };
+  module.exports = { isValidUTCString, processItems, parseByFormat, escapeXml, toAbsoluteUrl, purgeOrphanCache, initCache, getCacheEntry, _resetCacheForTest };
 }

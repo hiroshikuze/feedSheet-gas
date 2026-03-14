@@ -56,6 +56,12 @@ https://script.google.com/macros/s/[YOUR_SCRIPT_ID]/exec?code=my-news-feed
 
 Use this URL in your favorite RSS reader.
 
+### 3. Modifying or Deleting a Feed Configuration
+
+**Changing Target URL**: If you update the **Target URL** of an existing row, the cache is automatically reset on the next request. No manual action is needed — the old site's cached items will not appear in the new feed.
+
+**Deleting a row**: When you delete a row from the spreadsheet, the cache for that feed remains in Script Properties. To clean it up, run `purgeOrphanCache()` once from the GAS script editor (`Run` > select function > `Run`).
+
 ## File Structure
 
 ```tree

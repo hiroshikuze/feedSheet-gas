@@ -13,9 +13,10 @@
  *  6. previewモード → orphan処理・キャッシュ書き込みなし
  *  7. HTML在籍アイテムとorphanの混在
  *  8. キャッシュ内のtitle/descriptionがghost itemに引き継がれる
+ *  9. targetUrl変更後（initCache自動リセット済み）→ 旧サイトのorphanがRSSに混入しない
  */
 
-const { processItems } = require('../index');
+const { processItems, initCache, getCacheEntry, _resetCacheForTest } = require('../index');
 
 const CACHE_PERIOD = 7;
 const BASE_DATE = new Date('2024-03-14T00:00:00Z');
@@ -244,5 +245,49 @@ describe('シナリオ8: イミュータビリティ', () => {
     processItems([makeHtmlItem(1)], cache, BASE_DATE, CACHE_PERIOD, false);
     // 元の配列のlastSeenは変わっていない
     expect(cache[0].lastSeen).toBe(originalLastSeen);
+  });
+});
+
+// ─────────────────────────────────────────
+// シナリオ 9: targetUrl変更後の統合確認
+// ─────────────────────────────────────────
+describe('シナリオ9: targetUrl変更後（initCache自動リセット）→ 旧サイトのorphanがRSSに混入しない', () => {
+  beforeEach(() => {
+    global.__mockProps = {};
+    _resetCacheForTest();
+  });
+
+  test('旧サイトのキャッシュ（期間内）がRSSに現れない', () => {
+    const OLD_URL = 'https://old-site.example.com/';
+    const NEW_URL = 'https://new-site.example.com/';
+    const NO = 9;
+
+    // 旧サイトのキャッシュ（期間内のorphan候補）をセット
+    // CACHE_PERIOD(7日)以内の日付を使い、時間フィルタではなくフィンガープリントでリセットされることを確認
+    const recentUTC = new Date(Date.now() - 24 * 60 * 60 * 1000).toUTCString(); // 1日前
+    global.__mockProps['CACHE_JSON'] = JSON.stringify([{
+      no: NO,
+      targetUrl: OLD_URL,
+      value: [
+        { url: 'https://old-site.example.com/article/1', title: '旧記事1', description: '', savedDate: recentUTC, lastSeen: recentUTC },
+        { url: 'https://old-site.example.com/article/2', title: '旧記事2', description: '', savedDate: recentUTC, lastSeen: recentUTC }
+      ]
+    }]);
+
+    // targetUrl変更でinitCacheを呼ぶ → 自動リセット発動
+    initCache(NO, false, false, NEW_URL);
+
+    // 新サイトのHTMLアイテムでprocessItemsを実行
+    const newHtmlItems = [makeHtmlItem(100)];
+    const { rssItems } = processItems(newHtmlItems, getCacheEntry().value, BASE_DATE, CACHE_PERIOD, false);
+
+    // 新記事のみRSSに含まれる
+    expect(rssItems).toHaveLength(1);
+    expect(rssItems[0].url).toBe('https://example.com/100');
+
+    // 旧サイトのURLはRSSに混入していない
+    const rssUrls = rssItems.map(i => i.url);
+    expect(rssUrls).not.toContain('https://old-site.example.com/article/1');
+    expect(rssUrls).not.toContain('https://old-site.example.com/article/2');
   });
 });

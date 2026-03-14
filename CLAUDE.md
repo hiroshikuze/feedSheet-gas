@@ -51,7 +51,9 @@ There is **no build step, no bundler, and no test framework**. The single `index
 ```
 doGet(e)
   ├─ getConfigByNo(no, code)   → reads row from "取得元" sheet
-  ├─ initCache(no, isReset, isPreview)  → loads/filters CACHE from Script Properties
+  ├─ initCache(no, isReset, isPreview, targetUrl)
+  │    → loads CACHE from Script Properties
+  │    → auto-resets value[] if stored targetUrl ≠ current targetUrl (config change detection)
   ├─ generateRssFeed(config, isPreview)
   │    ├─ UrlFetchApp.fetch(targetUrl)   → fetches HTML
   │    ├─ extractItems(html, config)     → Cheerio parsing, returns item array
@@ -69,6 +71,12 @@ doGet(e)
 | `code` | string | Select config row by Code column (required if `no` absent) |
 | `reset` | `1` | Clear cache for this config; all items treated as new |
 | `preview` | `1` | Return feed without saving cache (safe for testing) |
+
+### Utility Functions (run manually from GAS editor)
+
+| Function | Purpose |
+| :--- | :--- |
+| `purgeOrphanCache()` | Removes `CACHE_JSON` entries whose `no` no longer exists in the sheet. Run after deleting a config row. |
 
 ### Google Sheet Schema (`取得元` sheet, row index 0 = header)
 
@@ -108,6 +116,7 @@ Example: `YYYY.MM.DD` parses `"2026.02.25"`.
 [
   {
     "no": 1,
+    "targetUrl": "https://example.com/",
     "value": [
       {
         "url": "https://example.com/article/1",
@@ -119,7 +128,8 @@ Example: `YYYY.MM.DD` parses `"2026.02.25"`.
 ]
 ```
 
-Items older than `CACHE_PERIOD` days (measured by `lastSeen`) are purged on each request.
+- `targetUrl`: fingerprint for auto-reset detection. When the spreadsheet's `targetUrl` differs from this stored value, `initCache` automatically clears `value` (equivalent to `?reset=1`). Old cache entries without this field are treated as changed and reset on first access.
+- Items older than `CACHE_PERIOD` days (measured by `lastSeen`) are purged on each request.
 
 ## Coding Conventions
 
