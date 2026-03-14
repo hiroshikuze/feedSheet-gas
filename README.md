@@ -79,6 +79,12 @@ Use this URL in your favorite RSS reader.
 
 [hiroshikuze](https://github.com/hiroshikuze)
 
-## Donation
+## Disclaimer
 
-[Author's wish list by Amazon(Japanese)](https://www.amazon.jp/hz/wishlist/ls/5BAWD0LZ89V9?ref_=wl_share)
+Users are solely responsible for ensuring their use of this tool complies with the terms of service of target websites and applicable laws. This tool does not endorse scraping content in violation of copyright or website terms of service.
+
+## 💖 Support my work
+
+If you'd like to support my projects, please consider becoming a sponsor!
+
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=github-sponsors)](https://github.com/sponsors/hiroshikuze) [![Amazon Wishlist](https://img.shields.io/badge/Amazon-Wishlist-orange?style=for-the-badge&logo=amazon)](https://www.amazon.jp/hz/wishlist/ls/5BAWD0LZ89V9?ref_=wl_share)
