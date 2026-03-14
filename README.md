@@ -60,16 +60,28 @@ Use this URL in your favorite RSS reader.
 
 ```tree
 /
-├── .gitignore    # Files and directories to be ignored by Git
-├── index.js      # The main Google Apps Script code
-├── LICENSE       # License file
-└── README.md     # This file
+├── .github/
+│   └── workflows/
+│       └── test.yml          # GitHub Actions: runs unit tests on push / PR
+├── test/
+│   ├── setup.js              # Jest setup: GAS API mocks
+│   ├── cacheAlgorithm.test.js # Unit tests for the core cache algorithm (processItems)
+│   └── parseByFormat.test.js  # Unit tests for parseByFormat, escapeXml, isValidUTCString
+├── .gitignore                # Files and directories to be ignored by Git
+├── CLAUDE.md                 # AI assistant guide: architecture, conventions, algorithm notes
+├── appscript.json            # GAS manifest: runtime, library dependencies, web app config
+├── index.js                  # The main Google Apps Script code
+├── LICENSE                   # MIT License
+├── package.json              # npm config for Jest (test only; no build system)
+└── README.md                 # This file
 ```
 
 ## Technologies
 
 - **Google Apps Script (GAS)**: Serverless backend for fetching and parsing HTML.
 - **Google Sheets**: Database for managing feed configurations.
+- **Cheerio (cheerio-gas)**: CSS-selector-based HTML parsing library for GAS.
+- **Jest**: Unit test runner for the pure-function logic (CI only; not used in GAS runtime).
 
 ## License
 
