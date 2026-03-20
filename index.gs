@@ -574,5 +574,5 @@ const _resetCacheForTest = () => {
 
 // Node.js（Jest）環境でのみエクスポート（GAS実行時は module が未定義のため無視される）
 if (typeof module !== 'undefined') {
-  module.exports = { isValidUTCString, processItems, parseByFormat, escapeXml, toAbsoluteUrl, purgeOrphanCache, initCache, getCacheEntry, _resetCacheForTest };
+  module.exports = { isValidUTCString, processItems, parseByFormat, escapeXml, toAbsoluteUrl, purgeOrphanCache, initCache, getCacheEntry, _resetCacheForTest, buildRssXml };
 }

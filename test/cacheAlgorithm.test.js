@@ -32,6 +32,13 @@ const makeHtmlItem = (id, dateUTC = null) => ({
   guid: `https://example.com/${id}`
 });
 
+/** テスト用日付ヘルパー（BASE_DATEではなく実行時刻基準） */
+const makeDateDaysAgo = (daysAgo) => {
+  const d = new Date(BASE_DATE);
+  d.setDate(d.getDate() - daysAgo);
+  return d;
+};
+
 /** テスト用キャッシュアイテム生成ヘルパー（savedDaysAgo日前を savedDate とする） */
 const makeCacheItem = (id, savedDaysAgo, overrides = {}) => {
   const savedDate = new Date(BASE_DATE);
@@ -289,5 +296,35 @@ describe('シナリオ9: targetUrl変更後（initCache自動リセット）→ 
     const rssUrls = rssItems.map(i => i.url);
     expect(rssUrls).not.toContain('https://old-site.example.com/article/1');
     expect(rssUrls).not.toContain('https://old-site.example.com/article/2');
+  });
+});
+
+// ─────────────────────────────────────────
+// シナリオ 10: savedDate vs lastSeen 乖離ケース
+// ─────────────────────────────────────────
+describe('シナリオ10: savedDateが期限切れ・lastSeenが期間内のorphan', () => {
+  test('initCacheを通過するがprocessItemsでキャッシュ削除・RSS不掲載', () => {
+    // savedDate=10日前（CACHE_PERIOD=7超過）、lastSeen=1日前（期間内）
+    // → initCache は lastSeen が新しいので通過
+    // → processItems orphan処理は savedDate が古いので削除
+    const cache = [makeCacheItem(1, 3, {
+      savedDate: makeDateDaysAgo(10).toUTCString(), // 10日前
+      lastSeen:  makeDateDaysAgo(1).toUTCString()   // 1日前
+    })];
+    const { rssItems, updatedCache } = processItems([], cache, BASE_DATE, CACHE_PERIOD, false);
+    expect(rssItems).toHaveLength(0);
+    expect(updatedCache).toHaveLength(0);
+  });
+
+  test('savedDateが期間内・lastSeenが期限切れの場合はinitCache段階で既に除外済み（参考テスト）', () => {
+    // processItemsに到達する前にinitCacheで弾かれる想定の動作をドキュメント化
+    // processItems単独ではlastSeenを使わないため、ghost itemとして追加される
+    const cache = [makeCacheItem(1, 3, {
+      savedDate: makeDateDaysAgo(1).toUTCString(),  // 1日前（期間内）
+      lastSeen:  makeDateDaysAgo(10).toUTCString()  // 10日前（期限切れ）
+    })];
+    // processItems単独ではlastSeenを使わないため、savedDateが期間内ならghost item扱い
+    const { rssItems } = processItems([], cache, BASE_DATE, CACHE_PERIOD, false);
+    expect(rssItems).toHaveLength(1); // savedDateが期間内なのでghost item
   });
 });

@@ -14,7 +14,7 @@ There is **no build system, no npm, no CI/CD**. The single source file `index.gs
 
 ## Repository Structure
 
-```
+```text
 /
 ├── index.gs          # Single-file GAS application (all logic here)
 ├── appscript.json    # GAS manifest: timezone, library deps, webapp config
@@ -48,7 +48,7 @@ There is **no build step, no bundler, and no test framework**. The single `index
 
 ### Request Flow (`doGet` → …)
 
-```
+```text
 doGet(e)
   ├─ getConfigByNo(no, code)   → reads row from "取得元" sheet
   ├─ initCache(no, isReset, isPreview, targetUrl)

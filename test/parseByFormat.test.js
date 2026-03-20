@@ -67,6 +67,14 @@ describe('escapeXml', () => {
     expect(escapeXml(null)).toBe('');
     expect(escapeXml(undefined)).toBe('');
   });
+
+  test('数値0はfalsyのため空文字を返す', () => {
+    expect(escapeXml(0)).toBe('');
+  });
+
+  test('数値42は文字列に変換して返す', () => {
+    expect(escapeXml(42)).toBe('42');
+  });
 });
 
 describe('isValidUTCString', () => {

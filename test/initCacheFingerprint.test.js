@@ -47,6 +47,7 @@ describe('シナリオ1: targetUrlが同じ場合', () => {
     const entry = getCacheEntry();
     // 古すぎない記事なのでvalueが残っている（テスト基準日付が許容範囲内のため実際の値は環境依存だが、リセットはされていない）
     expect(entry.targetUrl).toBe(SAME_URL);
+    expect(entry.value).toHaveLength(1); // itemが保持されていることを確認
   });
 });
 
