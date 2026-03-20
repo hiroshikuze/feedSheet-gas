@@ -22,3 +22,6 @@ node_modules/
 
 # Gemini
 .geminirules
+
+# Claude Code (local settings)
+.claude/settings.local.json

@@ -16,15 +16,27 @@ There is **no build system, no npm, no CI/CD**. The single source file `index.gs
 
 ```text
 /
+├── .github/
+│   └── workflows/
+│       └── test.yml                       # GitHub Actions: runs unit tests on push / PR
+├── test/
+│   ├── setup.js                           # Jest setup: GAS API mocks
+│   ├── buildRssXml.test.js                # Unit tests for buildRssXml
+│   ├── cacheAlgorithm.test.js             # Unit tests for processItems cache algorithm
+│   ├── initCacheFingerprint.test.js       # Unit tests for initCache targetUrl change detection
+│   ├── parseByFormat.test.js              # Unit tests for parseByFormat, escapeXml, isValidUTCString
+│   ├── purgeOrphanCache.test.js           # Unit tests for purgeOrphanCache
+│   └── toAbsoluteUrl.test.js              # Unit tests for toAbsoluteUrl
 ├── index.gs          # Single-file GAS application (all logic here)
 ├── appscript.json    # GAS manifest: timezone, library deps, webapp config
+├── package.json      # npm config for Jest (test only; no build system)
 ├── .geminirules      # AI coding conventions (Japanese, not tracked in git)
 ├── .gitignore        # Excludes .clasp.json, IDE dirs, OS files
 ├── README.md         # User-facing documentation (English)
 └── LICENSE           # MIT License
 ```
 
-There is **no build step, no bundler, and no test framework**. The single `index.gs` is copied directly into the GAS script editor.
+There is **no build step and no bundler**. The single `index.gs` is copied directly into the GAS script editor. Unit tests run via **Jest** (Node.js only; not used in the GAS runtime).
 
 ## Technology Stack
 
@@ -165,7 +177,7 @@ All rules from `.geminirules` apply. Key points:
 
 ## Testing / Debugging
 
-There is no automated test suite. Use these approaches:
+Pure functions in `index.gs` are covered by a **Jest** unit test suite under `test/`. Run with `npm test` (requires Node.js). Additional debugging approaches:
 
 - **`?preview=1`** — returns the feed without modifying the cache; safe for repeated calls during development.
 - **`?reset=1`** — clears the cache for a config entry, forcing all items to be treated as new.

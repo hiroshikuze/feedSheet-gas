@@ -70,9 +70,13 @@ Use this URL in your favorite RSS reader.
 │   └── workflows/
 │       └── test.yml          # GitHub Actions: runs unit tests on push / PR
 ├── test/
-│   ├── setup.js              # Jest setup: GAS API mocks
-│   ├── cacheAlgorithm.test.js # Unit tests for the core cache algorithm (processItems)
-│   └── parseByFormat.test.js  # Unit tests for parseByFormat, escapeXml, isValidUTCString
+│   ├── setup.js                       # Jest setup: GAS API mocks
+│   ├── buildRssXml.test.js            # Unit tests for buildRssXml (RSS structure, escapeXml)
+│   ├── cacheAlgorithm.test.js         # Unit tests for the core cache algorithm (processItems)
+│   ├── initCacheFingerprint.test.js   # Unit tests for initCache targetUrl change detection
+│   ├── parseByFormat.test.js          # Unit tests for parseByFormat, escapeXml, isValidUTCString
+│   ├── purgeOrphanCache.test.js       # Unit tests for purgeOrphanCache
+│   └── toAbsoluteUrl.test.js          # Unit tests for toAbsoluteUrl
 ├── .gitignore                # Files and directories to be ignored by Git
 ├── CLAUDE.md                 # AI assistant guide: architecture, conventions, algorithm notes
 ├── appscript.json            # GAS manifest: runtime, library dependencies, web app config
