@@ -6,6 +6,13 @@ Spreadsheet-driven RSS generator using Google Apps Script. Scrape web content vi
 
 **feedSheet-gas** is a Google Apps Script (GAS) application that generates RSS feeds from any web page. By defining scraping rules (CSS selectors) in a Google Sheet, you can turn website updates into an RSS feed, even if the site does not natively support RSS.
 
+> [!IMPORTANT]
+> **This tool only works with static pages.**
+> It works by downloading the HTML of a page directly, the same way a browser would when JavaScript is disabled.
+> If a website loads its articles or news items dynamically using JavaScript (for example, content that appears after a brief loading spinner, or pages built with frameworks like React or Vue), those items will not be visible in the raw HTML that this tool downloads — and the feed will not work.
+>
+> **A quick way to check compatibility:** Right-click the target page in your browser and choose "View Page Source". If you can see the article titles and links in that source code, this tool should work. If the source mostly shows `<script>` tags with little readable content, the page is likely dynamic and not supported.
+
 ## Installation
 
 1. **Create a Google Sheet**
