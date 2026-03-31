@@ -119,6 +119,8 @@ Users are solely responsible for ensuring their use of this tool complies with t
 
 ## 💖 Support my work
 
-If you'd like to support my projects, please consider becoming a sponsor!
+If you'd like to support my projects, please star the repo or become a sponsor!
+
+[![GitHub Stars](https://img.shields.io/github/stars/hiroshikuze/feedSheet-gas?style=for-the-badge&logo=github&color=yellow&label=%E2%AD%90%20Star%20this%20repo)](https://github.com/hiroshikuze/feedSheet-gas/stargazers)
 
 [![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?style=for-the-badge&logo=github-sponsors)](https://github.com/sponsors/hiroshikuze) [![Amazon Wishlist](https://img.shields.io/badge/Amazon-Wishlist-orange?style=for-the-badge&logo=amazon)](https://www.amazon.jp/hz/wishlist/ls/5BAWD0LZ89V9?ref_=wl_share)
